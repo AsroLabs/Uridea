@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { redirect } from "next/navigation";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -12,10 +13,18 @@ const supabase = createClient(
     supabaseKey
 );
 
+export async function getUser() {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error) {
+        return { user: null, error };
+    }
+    return { user, error: null };
+}
+
 export async function signUp(email: string, password: string) {
     const { data, error } = await supabase.auth.signUp({
         email, password, options: {
-            emailRedirectTo: 'http://localhost:1420/auth/login'
+            emailRedirectTo: 'http://localhost:3000/auth/login'
         }
     });
     if (error) {
@@ -34,3 +43,8 @@ export async function signOut() {
     const { error } = await supabase.auth.signOut();
     return { error };
 }
+
+supabase.auth.onAuthStateChange((event, session) => {
+    if(!session) redirect("/auth");
+    else redirect("/dashboard");
+})
