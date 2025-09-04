@@ -5,17 +5,15 @@ export default function Menu() {
     <main>
       <MenuHeader />
 
-      <section className="flex flex-row justify-around  px-2">
-        <div className="*:leading-6">
-          <h1 className="text-xl font-extrabold text-black">My Brainstorming Sessions</h1>
-          <p className=" text-sm text-gray-500">Create or join Brainstorming Sessions</p>
+      <section className="flex flex-col md:flex-row md:justify-around items-center gap-5 px-2 py-8">
+        <div className="text-center">
+          <h1 className="text-lg md:text-xl font-extrabold text-black leading-6 md:leading-10">My Brainstorming Sessions</h1>
+          <p className=" text-sm text-gray-500 leading-4">Create or join Brainstorming Sessions</p>
         </div>
 
-        <div>
-          <button className="btn btn-primary">
-            New session
-          </button>
-        </div>
+        <button className="btn  btn-primary btn-sm md:btn-md lg:btn-lg">
+          + New session
+        </button>
       </section>
     </main>
   )
