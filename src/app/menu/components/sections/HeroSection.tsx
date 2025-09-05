@@ -1,5 +1,3 @@
-import React from 'react'
-
 export default function HeroSection() {
     return (
         <section className="flex flex-col md:flex-row md:justify-around items-center gap-5 px-2 py-8">

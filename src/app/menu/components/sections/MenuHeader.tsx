@@ -1,7 +1,6 @@
 export default function MenuHeader() {
   return (
     <header className="navbar px-3 pt-3 sm:px-4 md:px-6 w-full max-w-[100vw] sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto">
-
       <div className="flex-1">
         <a className="text-base sm:text-lg md:text-xl lg:text-2xl text-black">daisyUI</a>
       </div>
@@ -28,8 +27,7 @@ export default function MenuHeader() {
             <li><a className="py-3">Logout</a></li>
           </ul>
         </div>
-      </div>
-    
+      </div> 
     </header>
   )
 }
