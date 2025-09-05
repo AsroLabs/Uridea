@@ -1,55 +1,30 @@
-"use client";
-
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-
-export default function LoginPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-
-  // Usuario demo ficticio
-  const demoUser = {
-    email: "demo@demo.com",
-    password: "demo123",
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (email === demoUser.email && password === demoUser.password) {
-      router.push("/menu"); // redirige al menú
-    } else {
-      setError("Usuario o contraseña incorrectos");
-    }
-  };
-
+export default function RegisterPage() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="card w-full max-w-md bg-white shadow-lg rounded-xl transform transition duration-500 hover:scale-105">
         <div className="card-body">
           <h2 className="text-3xl font-bold text-center text-gray-800">
-            Bienvenido
+            Crear cuenta
           </h2>
 
           <p className="text-center text-sm text-gray-500 mt-2">
-            Ingresa a tu cuenta para continuar
+            Únete a nuestra plataforma
           </p>
 
-          <form className="flex flex-col gap-4 mt-6" onSubmit={handleSubmit}>
+          <form className="flex flex-col gap-4 mt-6">
+            <input
+              type="text"
+              placeholder="Nombre completo"
+              className="input input-bordered w-full focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
+            />
             <input
               type="email"
               placeholder="Correo electrónico"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
               className="input input-bordered w-full focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
             />
             <input
               type="password"
               placeholder="Contraseña"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
               className="input input-bordered w-full focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
             />
 
@@ -57,27 +32,21 @@ export default function LoginPage() {
               type="submit"
               className="btn w-full bg-blue-600 text-white font-semibold border-none shadow-md transform transition duration-300 hover:scale-105"
             >
-              Iniciar sesión
+              Crear cuenta
             </button>
           </form>
-
-          {error && <p className="text-red-500 text-center mt-2">{error}</p>}
 
           <div className="divider">o</div>
 
           <button className="btn btn-outline w-full text-gray-700 border-gray-300 hover:bg-gray-100 transition transform duration-300 hover:scale-105">
-            Continuar con Google
+            Registrarse con Google
           </button>
 
           <p className="text-sm text-center mt-4 text-gray-600">
-            ¿No tienes cuenta?{" "}
-            <a href="/auth/register" className="link text-blue-600 font-semibold">
-              Crear cuenta
+            ¿Ya tienes cuenta?{" "}
+            <a href="/auth" className="link text-blue-600 font-semibold">
+              Inicia sesión
             </a>
-          </p>
-
-          <p className="text-sm text-center mt-2 text-gray-500">
-            Usuario demo: <span className="font-semibold">demo@demo.com</span> / demo123
           </p>
         </div>
       </div>
