@@ -6,6 +6,7 @@
   name: "pastel";
   default: true;
   prefersdark: true;
+  color-scheme: "dark";
   --color-base-100: oklch(100% 0 0);
   --color-base-200: oklch(98.462% 0.001 247.838);
   --color-base-300: oklch(92.462% 0.001 247.838);
