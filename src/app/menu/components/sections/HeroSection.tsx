@@ -6,7 +6,7 @@ export default function HeroSection() {
                 <p className=" text-sm text-gray-500 leading-4">Create or join Brainstorming Sessions</p>
             </div>
 
-            <button className="btn  btn-primary btn-sm md:btn-md lg:btn-lg">
+            <button className="btn rounded btn-primary  btn-sm md:btn-md lg:btn-lg">
                 + New session
             </button>
         </section>
