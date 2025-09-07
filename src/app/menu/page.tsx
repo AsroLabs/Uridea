@@ -1,3 +1,5 @@
+"use client"
+
 import MenuHeader from "./components/sections/MenuHeader";
 import HeroSection from "./components/sections/HeroSection";
 import CardSection from "./components/sections/CardSection";
