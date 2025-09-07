@@ -1,50 +1,61 @@
-import { createClient } from "@supabase/supabase-js";
-import { redirect } from "next/navigation";
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { type NextRequest, NextResponse } from 'next/server';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+export const createClient = (request: NextRequest) => {
+  // Create an unmodified response
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
 
-if (!supabaseUrl || !supabaseKey) {
-    throw new Error("Missing Supabase environment variables");
-}
-
-const supabase = createClient(
-    supabaseUrl,
-    supabaseKey
-);
-
-export async function getUser() {
-    const { data: { user }, error } = await supabase.auth.getUser();
-    if (error) {
-        return { user: null, error };
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return request.cookies.getAll(name)?.map(cookie => cookie.value);
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          // If the cookie is updated, update the cookies for the request and response
+          request.cookies.set({
+            name,
+            value,
+            ...options,
+          });
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          });
+          response.cookies.set({
+            name,
+            value,
+            ...options,
+          });
+        },
+        remove(name: string, options: CookieOptions) {
+          // If the cookie is removed, update the cookies for the request and response
+          request.cookies.set({
+            name,
+            value: '',
+            ...options,
+          });
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          });
+          response.cookies.set({
+            name,
+            value: '',
+            ...options,
+          });
+        },
+      },
     }
-    return { user, error: null };
-}
+  );
 
-export async function signUp(email: string, password: string) {
-    const { data, error } = await supabase.auth.signUp({
-        email, password, options: {
-            emailRedirectTo: 'http://localhost:3000/auth/login'
-        }
-    });
-    if (error) {
-        return { data, error };
-    }
-    return { data, error };
-}
-
-// Sign in with email and password
-export async function signIn(email: string, password: string) {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    return { data, error };
-}
-
-export async function signOut() {
-    const { error } = await supabase.auth.signOut();
-    return { error };
-}
-
-supabase.auth.onAuthStateChange((event, session) => {
-    if(!session) redirect("/auth");
-    else redirect("/dashboard");
-})
+  return { supabase, response };
+};
