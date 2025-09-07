@@ -88,9 +88,6 @@ export default function LoginPage() {
             </a>
           </p>
 
-          <p className="text-sm text-center mt-2 text-gray-500">
-            Usuario demo: <span className="font-semibold">demo@demo.com</span> / demo123
-          </p>
         </div>
       </div>
     </div>
