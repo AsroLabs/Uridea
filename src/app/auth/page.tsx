@@ -2,26 +2,37 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // Usuario demo ficticio
-  const demoUser = {
-    email: "demo@demo.com",
-    password: "demo123",
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    setError("");
 
-    if (email === demoUser.email && password === demoUser.password) {
-      router.push("/menu"); // redirige al menú
-    } else {
-      setError("Usuario o contraseña incorrectos");
+    try {
+      const supabase = createClient();
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) {
+        throw signInError;
+      }
+
+      router.push("/menu");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al iniciar sesión");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -55,9 +66,10 @@ export default function LoginPage() {
 
             <button
               type="submit"
+              disabled={loading}
               className="btn w-full bg-blue-600 text-white font-semibold border-none shadow-md transform transition duration-300 hover:scale-105"
             >
-              Iniciar sesión
+              {loading ? "Iniciando sesión..." : "Iniciar sesión"}
             </button>
           </form>
 

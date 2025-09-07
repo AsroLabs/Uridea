@@ -1,8 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
-//Funcion de crear cliente en el archivo server.ts
-
 export async function createClient() {
   const cookieStore = await cookies()
 
@@ -29,5 +27,3 @@ export async function createClient() {
     }
   )
 }
-
-
