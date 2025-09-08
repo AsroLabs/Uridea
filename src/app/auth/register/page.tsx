@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
+import { authService } from "@/utils/auth/service";
+import { ROUTES } from "@/utils/auth/constants";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -17,28 +18,19 @@ export default function RegisterPage() {
     setLoading(true);
     setError("");
 
-    try {
-      const supabase = createClient();
-      const { error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-          },
-        },
-      });
+    const { success, error: signUpError } = await authService.signUp({
+      email,
+      password,
+      fullName
+    });
 
-      if (signUpError) {
-        throw signUpError;
-      }
-
-      router.push("/auth?message=Check your email to confirm your account");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al crear la cuenta");
-    } finally {
-      setLoading(false);
+    if (!success && signUpError) {
+      setError(signUpError);
+    } else {
+      router.push(`${ROUTES.AUTH}?message=Por favor, revisa tu correo para confirmar tu cuenta`);
     }
+    
+    setLoading(false);
   };
 
   return (
@@ -54,8 +46,19 @@ export default function RegisterPage() {
           </p>
 
           {error && (
-            <div className="alert alert-error text-sm text-center mt-4">
-              {error}
+            <div className="bg-red-50 border-l-4 border-red-500 p-4 my-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-red-700">
+                    {error}
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 
