@@ -49,25 +49,23 @@ export async function updateSession(request: NextRequest) {
   //   return NextResponse.redirect(url)
   // }
 
-    if (user) {
-    if (
-      request.nextUrl.pathname.startsWith('/auth') 
-    ) {
+  if (user) {
+    if (request.nextUrl.pathname.startsWith('/auth')) {
       // no user, potentially respond by redirecting the user to the login page
       const url = request.nextUrl.clone()
       url.pathname = '/menu'
       return NextResponse.redirect(url)
     }
   } else {
-    if (
-      request.nextUrl.pathname.startsWith('/menu')
-    ) {
+    if (request.nextUrl.pathname.startsWith('/menu')) {
       // no user, potentially respond by redirecting the user to the login page
       const url = request.nextUrl.clone()
       url.pathname = '/auth'
       return NextResponse.redirect(url)
     }
   }
+
+  
   // if (
   //   !user &&
   //   request.nextUrl.pathname.startsWith('/menu')
