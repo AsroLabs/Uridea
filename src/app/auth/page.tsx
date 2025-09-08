@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
+import GoogleSignIn from "./components/ui/GoogleSignIn";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -38,7 +39,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="card w-full max-w-md bg-white shadow-lg rounded-xl transform transition duration-500 hover:scale-105">
+      <div className="card w-full max-w-md bg-white shadow-lg rounded-xl transform transition">
         <div className="card-body">
           <h2 className="text-3xl font-bold text-center text-gray-800">
             Bienvenido
@@ -67,7 +68,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="btn w-full bg-blue-600 text-white font-semibold border-none shadow-md transform transition duration-300 hover:scale-105"
+              className="btn btn-primary font-semibold border-none shadow-md"
             >
               {loading ? "Iniciando sesión..." : "Iniciar sesión"}
             </button>
@@ -77,9 +78,7 @@ export default function LoginPage() {
 
           <div className="divider">o</div>
 
-          <button className="btn btn-outline w-full text-gray-700 border-gray-300 hover:bg-gray-100 transition transform duration-300 hover:scale-105">
-            Continuar con Google
-          </button>
+          <GoogleSignIn />
 
           <p className="text-sm text-center mt-4 text-gray-600">
             ¿No tienes cuenta?{" "}

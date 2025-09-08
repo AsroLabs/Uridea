@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authService } from "@/utils/auth/service";
 import { ROUTES } from "@/utils/auth/constants";
+import GoogleSignIn from "../components/ui/GoogleSignIn";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -35,7 +36,7 @@ export default function RegisterPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="card w-full max-w-md bg-white shadow-lg rounded-xl transform transition duration-500 hover:scale-105">
+      <div className="card w-full max-w-md bg-white shadow-lg rounded-xl transform transition">
         <div className="card-body">
           <h2 className="text-3xl font-bold text-center text-gray-800">
             Crear cuenta
@@ -92,7 +93,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="btn w-full bg-blue-600 text-white font-semibold border-none shadow-md transform transition duration-300 hover:scale-105"
+              className="btn btn-primary font-semibold border-none shadow-md"
             >
               {loading ? "Creando cuenta..." : "Crear cuenta"}
             </button>
@@ -100,9 +101,7 @@ export default function RegisterPage() {
 
           <div className="divider">o</div>
 
-          <button className="btn btn-outline w-full text-gray-700 border-gray-300 hover:bg-gray-100 transition transform duration-300 hover:scale-105">
-            Registrarse con Google
-          </button>
+          <GoogleSignIn />
 
           <p className="text-sm text-center mt-4 text-gray-600">
             ¿Ya tienes cuenta?{" "}
