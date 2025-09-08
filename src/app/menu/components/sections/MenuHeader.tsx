@@ -1,8 +1,11 @@
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
+import { useUser } from "@/hooks/useUser";
 
 export default function MenuHeader() {
   const router = useRouter();
+  const { fullName, isLoading } = useUser();
+
   const handleLogout = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     try {
@@ -38,10 +41,16 @@ export default function MenuHeader() {
             tabIndex={0}
             className="menu dropdown-content bg-base-100 rounded-box z-[100] mt-3 w-48 sm:w-56 p-2 shadow-lg text-sm sm:text-base">
             <li>
-              <a className="justify-between py-3">
-                Profile
-                <span className="badge">New</span>
-              </a>
+              <div className="py-3 justify-between">
+                {isLoading ? (
+                  <span className="loading loading-spinner loading-sm"></span>
+                ) : (
+                  <>
+                    {fullName || "Usuario"}
+                    <span className="badge badge-primary">Online</span>
+                  </>
+                )}
+              </div>
             </li>
             <li><a className="py-3">Settings</a></li>
             <li><button className="py-3" onClick={handleLogout}>Logout</button></li>
