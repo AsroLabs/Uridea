@@ -45,6 +45,6 @@
 body {
   margin: 0;
   height: 100vh;
-  background-color: aqua;
   color: black;
+  background-color: var(--color-base-200);
 }
