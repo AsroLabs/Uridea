@@ -23,7 +23,7 @@ export default function MenuHeader() {
   };
 
   return (
-    <header className="navbar px-3 pt-3 sm:px-4 md:px-6 w-full max-w-[100vw] sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto">
+    <header className="navbar bg-base-300 rounded-b-2xl px-3 pt-3 sm:px-4 md:px-6 w-full max-w-[100vw] sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto">
       <div className="flex-1">
         <a className="text-base sm:text-lg md:text-xl lg:text-2xl text-black">Uridea</a>
       </div>
