@@ -1,6 +1,6 @@
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
-import { useUser } from "@/hooks/useUser";
+import { useUser } from "@/hooks/useUser"
 
 export default function MenuHeader() {
   const router = useRouter();
