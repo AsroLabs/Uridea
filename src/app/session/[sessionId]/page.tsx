@@ -3,49 +3,11 @@
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
-import UserCard from "./components/ui/UserCard";
+import UserCard from "../components/ui/UserCard";
 
 
-interface Participant {
-  id: string;
-  name: string;
-  avatar?: string;
-  currentIdea?: {
-    id: string;
-    title: string;
-  };
-}
 
 // Mock data for testing UI
-const mockParticipants: Participant[] = [
-  {
-    id: "1",
-    name: "John Doe",
-    avatar: "https://i.pravatar.cc/150?img=1",
-    currentIdea: {
-      id: "idea1",
-      title: "Improve UX flow"
-    }
-  },
-  {
-    id: "2",
-    name: "Alice Smith",
-    avatar: "https://i.pravatar.cc/150?img=2"
-  },
-  {
-    id: "3",
-    name: "Bob Johnson",
-    avatar: "https://i.pravatar.cc/150?img=3",
-    currentIdea: {
-      id: "idea2",
-      title: "Add dark mode"
-    }
-  },
-  {
-    id: "4",
-    name: "Emma Wilson",
-  }
-];
 
 export default function Session() {
   const currentUserId = "2"; // Mock current user ID for testing
@@ -55,14 +17,15 @@ export default function Session() {
   const handleLogout = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error("Error during logout:", error.message);
-      } else {
-        // Redirect to login page after successful logout
-        router.push("/auth");
-      }
+      // const supabase = createClient();
+      // const { error } = await supabase.auth.signOut();
+      // if (error) {
+      //   console.error("Error during logout:", error.message);
+      // } else {
+      //   // Redirect to login page after successful logout
+      //   router.push("/auth");
+      // }
+      router.push("/menu");
     } catch (err) {
       console.error("Unexpected error during logout:", err);
     }
@@ -81,26 +44,14 @@ export default function Session() {
             <ul
               tabIndex={0}
               className="menu dropdown-content bg-base-100 rounded-box z-[100] mt-3 w-48 sm:w-56 p-2 shadow-lg text-sm sm:text-base">
-              <li>
-                <div className="py-3 justify-between">
-                  {isLoading ? (
-                    <span className="loading loading-spinner loading-sm"></span>
-                  ) : (
-                    <>
-                      {fullName || "Usuario"}
-                      <span className="badge badge-primary">Online</span>
-                    </>
-                  )}
-                </div>
-              </li>
               <li><a className="py-3">Settings</a></li>
-              <li><button className="py-3" onClick={handleLogout}>Logout</button></li>
+              <li><button className="py-3" onClick={handleLogout}>Quit</button></li>
             </ul>
           </div>
         </div>
       </header>
 
-      <main className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-10 sm:gap-8 place-items-center  mx-20 my-10">
+      <main className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-10 sm:gap-8 place-items-center mx-20 my-10">
         <UserCard />
         <UserCard />
         <UserCard />
