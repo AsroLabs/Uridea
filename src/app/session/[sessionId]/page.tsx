@@ -1,35 +1,37 @@
 "use client";
 
-import { createClient } from "@/utils/supabase/client";
+import { useParams } from 'next/navigation'
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import UserCard from "../components/ui/UserCard";
-
-
-
-// Mock data for testing UI
+import useRealtimeSession from '@/hooks/useSession';
 
 export default function Session() {
-  const currentUserId = "2"; // Mock current user ID for testing
   const router = useRouter();
   const { fullName, isLoading } = useUser();
 
   const handleLogout = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
+
     try {
-      // const supabase = createClient();
-      // const { error } = await supabase.auth.signOut();
-      // if (error) {
-      //   console.error("Error during logout:", error.message);
-      // } else {
-      //   // Redirect to login page after successful logout
-      //   router.push("/auth");
-      // }
       router.push("/menu");
     } catch (err) {
       console.error("Unexpected error during logout:", err);
     }
-  };
+  }
+  const { id } = useParams()
+  const userId = 'mock-user-id' // ← aquí va el auth.uid del usuario logeado
+
+  const { session, participants, isConnected, updateParticipantStatus } = useRealtimeSession({
+    sessionId: id as string,
+    userId,
+  })
+
+  if (!session) return <div>Cargando sesión...</div>
+
+
+
+
   return (
     <>
       <header className="navbar bg-base-300 rounded-b-2xl px-3 sm:px-4 md:px-6 w-full max-w-[100vw] sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto">
@@ -66,3 +68,4 @@ export default function Session() {
     </>
   )
 }
+
