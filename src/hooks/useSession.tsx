@@ -27,12 +27,11 @@ interface Participant {
 export default function useRealtimeSession({ sessionId, userId }: UseRealtimeSessionProps) {
   const supabase = createClient()
 
-  const [session, setSession] = useState<Session | null>(null)
-  const [participants, setParticipants] = useState<Participant[]>([])
-  const [isConnected, setIsConnected] = useState(false)
+  // const [session, setSession] = useState<Session | null>(null)
+  // const [participants, setParticipants] = useState<Participant[]>([])
+  // const [isConnected, setIsConnected] = useState(false)
 
   /*
-
   // 1. Cargar estado inicial de la sesión
   const fetchInitialData = useCallback(async () => {
     const { data: sessionData } = await supabase

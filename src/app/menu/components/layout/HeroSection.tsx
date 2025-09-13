@@ -2,6 +2,7 @@
 
 import { useUser } from "@/hooks/useUser";
 import { createClient } from "@/utils/supabase/client";
+import { nanoid } from "nanoid";
 import { useState } from "react";
 
 export default function HeroSection() {
@@ -14,7 +15,7 @@ export default function HeroSection() {
         }
 
         const supabase = createClient();
-        const code = Math.random().toString(36).substring(2, 8).toUpperCase(); // código corto
+        const code = nanoid(6).toUpperCase(); // código corto
 
         const { data: session, error } = await supabase
             .from('sessions')
