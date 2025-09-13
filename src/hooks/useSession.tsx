@@ -31,6 +31,8 @@ export default function useRealtimeSession({ sessionId, userId }: UseRealtimeSes
   const [participants, setParticipants] = useState<Participant[]>([])
   const [isConnected, setIsConnected] = useState(false)
 
+  /*
+
   // 1. Cargar estado inicial de la sesión
   const fetchInitialData = useCallback(async () => {
     const { data: sessionData } = await supabase
@@ -104,4 +106,7 @@ export default function useRealtimeSession({ sessionId, userId }: UseRealtimeSes
     isConnected,
     updateParticipantStatus,
   }
+  
+  */
 }
+
