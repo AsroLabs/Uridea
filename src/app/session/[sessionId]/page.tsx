@@ -1,14 +1,12 @@
 "use client";
 
-import { useParams } from 'next/navigation'
-import { useRouter } from "next/navigation";
-import { useUser } from "@/hooks/useUser";
+import { useParams, useRouter } from 'next/navigation'
 import UserCard from "../components/ui/UserCard";
-import useRealtimeSession from '@/hooks/useSession';
+import { useEffect } from 'react';
 
 export default function Session() {
   const router = useRouter();
-  const { fullName, isLoading } = useUser();
+
 
   const handleLogout = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -19,16 +17,12 @@ export default function Session() {
       console.error("Unexpected error during logout:", err);
     }
   }
-  const { id } = useParams()
-  const userId = 'mock-user-id' // ← aquí va el auth.uid del usuario logeado
+  const { sessionId } = useParams()
 
-  const { session, participants, isConnected, updateParticipantStatus } = useRealtimeSession({
-    sessionId: id as string,
-    userId,
-  })
 
-  if (!session) return <div>Cargando sesión...</div>
-
+  useEffect(() => {
+    console.log(sessionId)
+  }, [sessionId])
 
 
 
