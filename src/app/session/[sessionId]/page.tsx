@@ -1,8 +1,9 @@
 "use client";
 
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation';
 import UserCard from "../components/ui/UserCard";
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { createClient } from '@/utils/supabase/client';
 
 export default function Session() {
   const router = useRouter();
@@ -21,10 +22,46 @@ export default function Session() {
 
 
   useEffect(() => {
-    console.log(sessionId)
-  }, [sessionId])
+    async function loadSessionData() {
+      const supabase = createClient();
+      
+      // Verificar si la sesión existe y está activa
+      const { data: session, error: sessionError } = await supabase
+        .from('sessions')
+        .select('*')
+        .eq('id', sessionId)
+        .eq('status', 'active')
+        .single();
 
+      if (sessionError || !session) {
+        console.error('Error al cargar la sesión:', sessionError);
+        router.push('/menu');
+        return;
+      } else console.log('Te has unido a la sesión:', session);
 
+      // Obtener participantes activos
+      const { data: participants, error: participantsError } = await supabase
+        .from('session_participants')
+        .select('*')
+        .eq('session_id', sessionId)
+        .eq('status', 'active');
+
+      if (participantsError) {
+        console.error('Error al cargar participantes:', participantsError);
+        return;
+      }
+
+      if (!participants || participants.length === 0) {
+        console.error('No hay participantes activos');
+        router.push('/menu');
+        return;
+      } else console.log('Participantes activos:', participants);
+    }
+
+    if (sessionId) {
+      loadSessionData();
+    }
+  }, [])
 
   return (
     <>
