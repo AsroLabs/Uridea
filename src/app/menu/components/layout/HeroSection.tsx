@@ -8,7 +8,8 @@ import { useState } from "react";
 export default function HeroSection() {
     const { user, fullName, isLoading } = useUser();
     const [title, setTitle] = useState("");
-    
+    const [sessionCode, setSessionCode] = useState("");
+
     async function createSession(title: string) {
         if (!user) {
             throw new Error('User must be authenticated to create a session');
@@ -31,7 +32,8 @@ export default function HeroSection() {
             status: 'active'
         }])
 
-        return console.info(session) // contiene id y code
+        setSessionCode(session.code);
+        return console.info(session); // contiene id y code
     }
 
 
@@ -59,6 +61,14 @@ export default function HeroSection() {
                         <input type="text" className="input join-item" placeholder="New session name" value={title} onChange={(e) => setTitle(e.target.value)} />
                         <button className="btn btn-secondary join-item" onClick={() => {createSession(title)}}>Create</button>
                     </div>
+
+                    {sessionCode && (
+                        <div className="mt-4 text-center">
+                            <p className="text-green-600 font-semibold">Session created!</p>
+                            <p className="text-sm">Share this code to invite others:</p>
+                            <p className="text-lg font-bold">{sessionCode}</p>
+                        </div>
+                    )}
                 </fieldset>
 
             </dialog>

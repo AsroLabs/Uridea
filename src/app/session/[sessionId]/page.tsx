@@ -5,63 +5,118 @@ import UserCard from "../components/ui/UserCard";
 import { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 
+interface Participant {
+  id: string;
+  session_id: string;
+  user_id: string;
+  status: 'active';
+  full_name?: string | null;
+}
+
 export default function Session() {
   const router = useRouter();
-
+  const { sessionId } = useParams();
+  // const [session, setSession] = useState<null>(null); // No necesitamos el estado de la sesión por ahora
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const handleLogout = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-
     try {
       router.push("/menu");
     } catch (err) {
       console.error("Unexpected error during logout:", err);
     }
   }
-  const { sessionId } = useParams()
-
 
   useEffect(() => {
+    const supabase = createClient();
+    
     async function loadSessionData() {
-      const supabase = createClient();
-      
-      // Verificar si la sesión existe y está activa
-      const { data: session, error: sessionError } = await supabase
-        .from('sessions')
-        .select('*')
-        .eq('id', sessionId)
-        .eq('status', 'active')
-        .single();
+      try {
+        setIsLoading(true);
+        
+        // 1. Verificar si la sesión existe y está activa
+        const { data: session, error: sessionError } = await supabase
+          .from('sessions')
+          .select('*')
+          .eq('id', sessionId)
+          .eq('status', 'active')
+          .single();
 
-      if (sessionError || !session) {
-        console.error('Error al cargar la sesión:', sessionError);
-        router.push('/menu');
-        return;
-      } else console.log('Te has unido a la sesión:', session);
+        if (sessionError || !session) {
+          console.error('Error al cargar la sesión:', sessionError);
+          router.push('/menu');
+          return;
+        }
 
-      // Obtener participantes activos
-      const { data: participants, error: participantsError } = await supabase
-        .from('session_participants')
-        .select('*')
-        .eq('session_id', sessionId)
-        .eq('status', 'active');
+        // 2. Obtener participantes activos con sus datos de usuario
+        const { data: participantsData, error: participantsError } = await supabase
+          .from('session_participants')
+          .select("*")
+          .eq('session_id', sessionId)
+          .eq('status', 'active');
 
-      if (participantsError) {
-        console.error('Error al cargar participantes:', participantsError);
-        return;
+        if (participantsError) {
+          console.error('Error al cargar participantes:', participantsError);
+          return;
+        }
+
+        if (!participantsData || participantsData.length === 0) {
+          console.error('No hay participantes activos');
+          router.push('/menu');
+          return;
+        }
+        
+        // Transformar los datos al formato correcto
+        const formattedParticipants = await Promise.all(participantsData.map(async p => {
+          const { data: userData } = await supabase.from('users').select('full_name').eq('id', p.user_id).single();
+
+          return {
+            id: p.id,
+            session_id: p.session_id,
+            user_id: p.user_id,
+            status: p.status as 'active',
+            full_name: userData?.full_name || null,
+          };
+        }));
+
+        setParticipants(formattedParticipants);
+      } catch (error) {
+        console.error('Error loading session data:', error);
+      } finally {
+        setIsLoading(false);
       }
-
-      if (!participants || participants.length === 0) {
-        console.error('No hay participantes activos');
-        router.push('/menu');
-        return;
-      } else console.log('Participantes activos:', participants);
     }
 
+    // Cargar datos iniciales
     if (sessionId) {
       loadSessionData();
     }
-  }, [])
+
+    // Suscribirse a cambios en participantes
+    const channel = supabase
+      .channel(`session_${sessionId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'session_participants',
+          filter: `session_id=eq.${sessionId}`
+        },
+        async (payload) => {
+          console.log('Participant change:', payload);
+          // Recargar participantes cuando hay cambios
+          loadSessionData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [sessionId, router]);
 
   return (
     <>
@@ -85,16 +140,24 @@ export default function Session() {
       </header>
 
       <main className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-10 sm:gap-8 place-items-center mx-20 my-10">
-        <UserCard />
-        <UserCard />
-        <UserCard />
-        <UserCard />
-        <UserCard />
-        <UserCard />
-        <UserCard />
-        <UserCard />
-        <UserCard />
-        <UserCard />
+        {isLoading ? (
+          // Mostrar skeletons mientras carga
+          Array.from({ length: 10 }).map((_, i) => (
+            <UserCard key={`skeleton-${i}`} isLoading={true} />
+          ))
+        ) : participants.length > 0 ? (
+          // Mostrar participantes
+          participants.map((participant) => (
+            <UserCard
+              key={participant.id}
+              fullName={participant.full_name || undefined}
+            />
+          ))
+        ) : (
+          <div className="col-span-full text-center py-10">
+            <p className="text-lg text-base-content/70">No hay participantes activos</p>
+          </div>
+        )}
       </main>
     </>
   )
