@@ -51,7 +51,10 @@ export default function JoinSection() {
                 .insert({
                     session_id: session.id,
                     user_id: user.id,
-                    status: 'active'
+                    status: 'active',
+                    username: fullName || 'User',
+                    isOwner: user.id === session.owner_id,
+                    ideaPermission: user.id === session.owner_id
                 })
                 .select()
                 .single();

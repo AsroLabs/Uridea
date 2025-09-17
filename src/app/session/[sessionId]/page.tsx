@@ -11,6 +11,8 @@ interface Participant {
   user_id: string;
   status: 'active';
   full_name?: string | null;
+  isOwner?: boolean;
+  ideaPermission?: boolean;
 }
 
 export default function Session() {
@@ -70,14 +72,15 @@ export default function Session() {
         
         // Transformar los datos al formato correcto
         const formattedParticipants = await Promise.all(participantsData.map(async p => {
-          const { data: userData } = await supabase.from('users').select('full_name').eq('id', p.user_id).single();
 
           return {
             id: p.id,
             session_id: p.session_id,
             user_id: p.user_id,
             status: p.status as 'active',
-            full_name: userData?.full_name || null,
+            full_name: p.username,
+            isOwner: p.isOwner,
+            ideaPermission: p.ideaPermission
           };
         }));
 
