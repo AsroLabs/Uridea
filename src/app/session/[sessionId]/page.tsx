@@ -4,6 +4,8 @@ import { useParams, useRouter } from 'next/navigation';
 import UserCard from "../components/ui/UserCard";
 import { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import CreateIdeaButton from '../components/ui/CreateIdeaButton';
+import { useUser } from '@/hooks/useUser';
 
 interface Participant {
   id: string;
@@ -18,6 +20,7 @@ interface Participant {
 export default function Session() {
   const router = useRouter();
   const { sessionId } = useParams();
+  const { user } = useUser();
   // const [session, setSession] = useState<null>(null); // No necesitamos el estado de la sesión por ahora
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -141,6 +144,16 @@ export default function Session() {
           </div>
         </div>
       </header>
+
+      <div className="max-w-[100vw] sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto px-4 mt-6">
+        <CreateIdeaButton
+          canCreateIdea={participants.find(p => p.user_id === user?.id)?.ideaPermission || false}
+          onClick={() => {
+            // TODO: Implementar creación de idea
+            console.log('Crear nueva idea');
+          }}
+        />
+      </div>
 
       <main className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-10 sm:gap-8 place-items-center mx-20 my-10">
         {isLoading ? (
