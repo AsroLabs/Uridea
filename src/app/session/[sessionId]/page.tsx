@@ -1,11 +1,20 @@
 "use client";
-
 import { useParams, useRouter } from 'next/navigation';
-import UserCard from "../components/ui/UserCard";
 import { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import CreateIdeaButton from '../components/ui/CreateIdeaButton';
 import { useUser } from '@/hooks/useUser';
+import UserCard from "../components/ui/UserCard";
+import CreateIdeaButton from '../components/ui/CreateIdeaButton';
+
+interface Idea {
+  id: string;
+  title: string;
+  description: string;
+  session_id: string;
+  user_id: string;
+  created_at: string;
+  status: 'active' | 'draft';
+}
 
 interface Participant {
   id: string;
@@ -21,6 +30,7 @@ export default function Session() {
   const router = useRouter();
   const { sessionId } = useParams();
   const { user } = useUser();
+  const [ideas, setIdeas] = useState<Idea[]>([]);
   // const [session, setSession] = useState<null>(null); // No necesitamos el estado de la sesión por ahora
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -36,7 +46,7 @@ export default function Session() {
 
   useEffect(() => {
     const supabase = createClient();
-    
+
     async function loadSessionData() {
       try {
         setIsLoading(true);
@@ -72,10 +82,21 @@ export default function Session() {
           router.push('/menu');
           return;
         }
+
+        // 3. Obtener ideas activas
+        const { data: ideasData, error: ideasError } = await supabase
+          .from('ideas')
+          .select('*')
+          .eq('session_id', sessionId)
+          .eq('status', 'draft');
+
+        if (ideasError) {
+          console.error('Error al cargar ideas:', ideasError);
+          return;
+        } else console.info(ideasData); 
         
         // Transformar los datos al formato correcto
         const formattedParticipants = await Promise.all(participantsData.map(async p => {
-
           return {
             id: p.id,
             session_id: p.session_id,
@@ -88,8 +109,11 @@ export default function Session() {
         }));
 
         setParticipants(formattedParticipants);
+        setIdeas(ideasData || []);
+
       } catch (error) {
         console.error('Error loading session data:', error);
+        router.push('/menu');
       } finally {
         setIsLoading(false);
       }
@@ -100,7 +124,7 @@ export default function Session() {
       loadSessionData();
     }
 
-    // Suscribirse a cambios en participantes
+    // Suscribirse a cambios en participantes e ideas
     const channel = supabase
       .channel(`session_${sessionId}`)
       .on(
@@ -113,7 +137,19 @@ export default function Session() {
         },
         async (payload) => {
           console.log('Participant change:', payload);
-          // Recargar participantes cuando hay cambios
+          loadSessionData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'ideas',
+          filter: `session_id=eq.${sessionId}`
+        },
+        async (payload) => {
+          console.log('Idea change:', payload);
           loadSessionData();
         }
       )
@@ -149,26 +185,108 @@ export default function Session() {
         <CreateIdeaButton
           canCreateIdea={participants.find(p => p.user_id === user?.id)?.ideaPermission || false}
           onClick={() => {
-            // TODO: Implementar creación de idea
-            console.log('Crear nueva idea');
+            const modal = document.getElementById('createIdeaModal') as HTMLDialogElement | null;
+            if (modal) {
+              modal.showModal();
+            }
           }}
         />
+        <dialog id="createIdeaModal" className="modal">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg mb-4">Nueva Idea</h3>
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              const form = e.target as HTMLFormElement;
+              const formData = new FormData(form);
+              const title = formData.get('title') as string;
+              const description = formData.get('description') as string;
+
+              if (!title || !description) return;
+
+              const supabase = createClient();
+              
+              try {
+                const { error } = await supabase
+                  .from('ideas')
+                  .insert({
+                    title: title.trim(),
+                    description: description.trim(),
+                    session_id: sessionId,
+                    user_id: user?.id,
+                    status: 'draft'
+                  });
+
+                if (error) throw error;
+
+                // Cerrar modal y limpiar form
+                const modal = document.getElementById('createIdeaModal') as HTMLDialogElement;
+                modal?.close();
+                form.reset();
+              } catch (error) {
+                console.error('Error al crear idea:', error);
+              }
+            }}>
+              <div className="form-control w-full">
+                <label className="label">
+                  <span className="label-text">Título</span>
+                </label>
+                <input 
+                  type="text" 
+                  name="title"
+                  placeholder="¿Cuál es tu idea?" 
+                  className="input input-bordered w-full"
+                  required
+                  maxLength={100}
+                />
+              </div>
+
+              <div className="form-control w-full mt-4">
+                <label className="label">
+                  <span className="label-text">Descripción</span>
+                </label>
+                <textarea 
+                  name="description"
+                  placeholder="Describe tu idea en detalle..." 
+                  className="textarea textarea-bordered h-24"
+                  required
+                  maxLength={500}
+                />
+              </div>
+
+              <div className="modal-action">
+                <button type="button" className="btn" onClick={() => {
+                  const modal = document.getElementById('createIdeaModal') as HTMLDialogElement;
+                  modal?.close();
+                }}>Cancelar</button>
+                <button type="submit" className="btn btn-primary">Crear Idea</button>
+              </div>
+            </form>
+          </div>
+        </dialog>
+
+        
       </div>
 
       <main className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-10 sm:gap-8 place-items-center mx-20 my-10">
         {isLoading ? (
           // Mostrar skeletons mientras carga
           Array.from({ length: 10 }).map((_, i) => (
-            <UserCard key={`skeleton-${i}`} isLoading={true} />
+            <UserCard key={`skeleton-${i}`} user_id="" isLoading={true} />
           ))
         ) : participants.length > 0 ? (
           // Mostrar participantes
-          participants.map((participant) => (
-            <UserCard
-              key={participant.id}
-              fullName={participant.full_name || undefined}
-            />
-          ))
+          participants.map((participant) => {
+            const userIdeas = ideas.filter(idea => idea.user_id === participant.user_id);
+            return (
+              <UserCard
+                key={participant.id}
+                user_id={participant.user_id}
+                fullName={participant.full_name || undefined}
+                hasIdeas={userIdeas.length > 0}
+                userIdeas={userIdeas}
+              />
+            );
+          })
         ) : (
           <div className="col-span-full text-center py-10">
             <p className="text-lg text-base-content/70">No hay participantes activos</p>
