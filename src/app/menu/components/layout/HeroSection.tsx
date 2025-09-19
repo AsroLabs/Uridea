@@ -26,12 +26,6 @@ export default function HeroSection() {
 
         if (error) throw error
 
-        await supabase.from('session_participants').insert([{
-            session_id: session.id,
-            user_id: user.id,
-            status: 'active'
-        }])
-
         setSessionCode(session.code);
         return console.info(session); // contiene id y code
     }
