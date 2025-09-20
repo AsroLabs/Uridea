@@ -14,6 +14,9 @@ interface Idea {
   user_id: string;
   created_at: string;
   status: 'active' | 'draft';
+  likes: number;
+  dislikes: number;
+  userRating?: 'like' | 'dislike' | null;
 }
 
 interface Participant {
@@ -41,6 +44,81 @@ export default function Session() {
       router.push("/menu");
     } catch (err) {
       console.error("Unexpected error during logout:", err);
+    }
+  }
+
+  const updateIdea = async (ideaId: string, action: 'like' | 'dislike', increment: boolean) => {
+    const supabase = createClient();
+    
+    const { data: currentIdea } = await supabase
+      .from('ideas')
+      .select('likes, dislikes')
+      .eq('id', ideaId)
+      .single();
+
+    if (!currentIdea) return;
+
+    const updates = action === 'like' 
+      ? { likes: Math.max(0, currentIdea.likes + (increment ? 1 : -1)) }
+      : { dislikes: Math.max(0, currentIdea.dislikes + (increment ? 1 : -1)) };
+
+    await supabase.from('ideas').update(updates).eq('id', ideaId);
+  };
+
+  const handleRateIdea = async (ideaId: string, action: 'like' | 'dislike') => {
+    if (!user?.id) return;
+
+    const supabase = createClient();
+    
+    try {
+      // Find the idea to update
+      const ideaToUpdate = ideas.find(idea => idea.id === ideaId);
+      if (!ideaToUpdate) return;
+
+      // If user has already rated with the same action, remove the rating
+      const isRemovingRating = ideaToUpdate.userRating === action;
+      
+      // Calculate new counts based on current state
+      const newLikes = ideaToUpdate.likes + (
+        action === 'like'
+          ? (isRemovingRating ? -1 : 1) // Removing like (-1) or adding like (+1)
+          : (ideaToUpdate.userRating === 'like' ? -1 : 0) // Remove like if switching from like to dislike
+      );
+      
+      const newDislikes = ideaToUpdate.dislikes + (
+        action === 'dislike'
+          ? (isRemovingRating ? -1 : 1) // Removing dislike (-1) or adding dislike (+1)
+          : (ideaToUpdate.userRating === 'dislike' ? -1 : 0) // Remove dislike if switching from dislike to like
+      );
+
+      // Optimistically update the UI
+      setIdeas(currentIdeas =>
+        currentIdeas.map(idea =>
+          idea.id === ideaId
+            ? {
+                ...idea,
+                userRating: isRemovingRating ? null : action,
+                likes: newLikes,
+                dislikes: newDislikes
+              }
+            : idea
+        )
+      );
+
+      // Update in the database
+      const { error } = await supabase
+        .from('ideas')
+        .update({
+          likes: newLikes,
+          dislikes: newDislikes
+        })
+        .eq('id', ideaId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error al actualizar el rating:', error);
+      // Revert optimistic update on error by reloading data
+      loadSessionData();
     }
   }
 
@@ -93,7 +171,13 @@ export default function Session() {
         if (ideasError) {
           console.error('Error al cargar ideas:', ideasError);
           return;
-        } else console.info(ideasData); 
+        }
+        
+        // Add userRating field based on current counts
+        const ideasWithUserRating = ideasData?.map(idea => ({
+          ...idea,
+          userRating: null // Initial state - no rating
+        })) || []; 
         
         // Transformar los datos al formato correcto
         const formattedParticipants = await Promise.all(participantsData.map(async p => {
@@ -109,7 +193,7 @@ export default function Session() {
         }));
 
         setParticipants(formattedParticipants);
-        setIdeas(ideasData || []);
+        setIdeas(ideasWithUserRating);
 
       } catch (error) {
         console.error('Error loading session data:', error);
@@ -148,9 +232,21 @@ export default function Session() {
           table: 'ideas',
           filter: `session_id=eq.${sessionId}`
         },
-        async (payload) => {
+        async (payload: any) => {
           console.log('Idea change:', payload);
-          loadSessionData();
+          if (payload.eventType === 'UPDATE' && payload.new.likes !== undefined) {
+            // Update just the likes/dislikes counts
+            setIdeas(currentIdeas => 
+              currentIdeas.map(idea => 
+                idea.id === payload.new.id
+                  ? { ...idea, likes: payload.new.likes, dislikes: payload.new.dislikes }
+                  : idea
+              )
+            );
+          } else {
+            // For other changes (new ideas, deletions), reload everything
+            loadSessionData();
+          }
         }
       )
       .subscribe();
@@ -284,6 +380,8 @@ export default function Session() {
                 fullName={participant.full_name || undefined}
                 hasIdeas={userIdeas.length > 0}
                 userIdeas={userIdeas}
+                currentUserId={user?.id}
+                onRateIdea={handleRateIdea}
               />
             );
           })
