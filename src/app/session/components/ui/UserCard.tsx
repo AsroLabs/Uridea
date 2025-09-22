@@ -17,7 +17,9 @@ interface UserCardProps {
     isLoading?: boolean;
     userIdeas?: Idea[];
     currentUserId?: string;
+    isOwner?: boolean;
     onRateIdea?: (ideaId: string, action: 'like' | 'dislike') => void;
+    onManageIdea?: (ideaId: string, action: 'save' | 'discard') => void;
 }
 
 export default function UserCard({ 
@@ -26,8 +28,10 @@ export default function UserCard({
     hasIdeas = false, 
     isLoading = false, 
     userIdeas = [],
-    currentUserId,
-    onRateIdea 
+
+    isOwner = false,
+    onRateIdea,
+    onManageIdea 
 }: UserCardProps) {
     const handleRate = (ideaId: string, action: 'like' | 'dislike') => (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -110,9 +114,42 @@ export default function UserCard({
                                                     <span>{idea.dislikes || 0}</span>
                                                 </button>
                                             </div>
-                                            <span className="text-sm text-base-content/60">
-                                                {new Date(idea.created_at).toLocaleDateString('es-ES')}
-                                            </span>
+                                            <div className="flex items-center gap-4">
+                                                {isOwner && (
+                                                    <div className="dropdown dropdown-end">
+                                                        <div tabIndex={0} role="button" className="btn btn-sm btn-ghost">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="w-4 h-4 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"></path></svg>
+                                                        </div>
+                                                        <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+                                                            <li>
+                                                                <button 
+                                                                    className="text-success"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        onManageIdea?.(idea.id, 'save');
+                                                                    }}
+                                                                >
+                                                                    Guardar idea
+                                                                </button>
+                                                            </li>
+                                                            <li>
+                                                                <button 
+                                                                    className="text-error"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        onManageIdea?.(idea.id, 'discard');
+                                                                    }}
+                                                                >
+                                                                    Descartar idea
+                                                                </button>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                )}
+                                                <span className="text-sm text-base-content/60">
+                                                    {new Date(idea.created_at).toLocaleDateString('es-ES')}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

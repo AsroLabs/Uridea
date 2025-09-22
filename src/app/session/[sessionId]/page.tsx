@@ -19,7 +19,7 @@ export default function Session() {
     userId: user?.id as string
   });
 
-  const { ideas, isLoading: isIdeasLoading, handleRateIdea } = useIdeas({
+  const { ideas, isLoading: isIdeasLoading, handleRateIdea, handleManageIdea } = useIdeas({
     sessionId: sessionId as string,
     userId: user?.id
   });
@@ -135,8 +135,9 @@ export default function Session() {
                 fullName={participant.full_name || undefined}
                 hasIdeas={userIdeas.length > 0}
                 userIdeas={userIdeas}
-                currentUserId={user?.id}
+                isOwner={participants.find(p => p.user_id === user?.id)?.isOwner || false}
                 onRateIdea={handleRateIdea}
+                onManageIdea={handleManageIdea}
               />
             );
           })
