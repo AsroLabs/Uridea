@@ -1,39 +1,37 @@
 "use client";
+
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { createClient } from '@/utils/supabase/client';
 import { useUser } from '@/hooks/useUser';
+import useRealtimeSession from '@/hooks/useSession';
+import { useIdeas } from '@/hooks/useIdeas';
+import { useCreateIdea } from '@/hooks/useCreateIdea';
+import { getUserIdeasForParticipant } from '@/utils/idea';
 import UserCard from "../components/ui/UserCard";
 import CreateIdeaButton from '../components/ui/CreateIdeaButton';
-
-interface Idea {
-  id: string;
-  title: string;
-  description: string;
-  session_id: string;
-  user_id: string;
-  created_at: string;
-  status: 'active' | 'draft';
-}
-
-interface Participant {
-  id: string;
-  session_id: string;
-  user_id: string;
-  status: 'active';
-  full_name?: string | null;
-  isOwner?: boolean;
-  ideaPermission?: boolean;
-}
 
 export default function Session() {
   const router = useRouter();
   const { sessionId } = useParams();
   const { user } = useUser();
-  const [ideas, setIdeas] = useState<Idea[]>([]);
-  // const [session, setSession] = useState<null>(null); // No necesitamos el estado de la sesión por ahora
-  const [participants, setParticipants] = useState<Participant[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+
+  const { participants, isLoading: isSessionLoading } = useRealtimeSession({
+    sessionId: sessionId as string,
+    userId: user?.id as string
+  });
+
+  const { ideas, isLoading: isIdeasLoading, handleRateIdea } = useIdeas({
+    sessionId: sessionId as string,
+    userId: user?.id
+  });
+
+  const { handleCreateIdea } = useCreateIdea({
+    sessionId: sessionId as string,
+    userId: user?.id,
+    onSuccess: () => {
+      const modal = document.getElementById('createIdeaModal') as HTMLDialogElement;
+      modal?.close();
+    }
+  });
 
   const handleLogout = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -44,121 +42,7 @@ export default function Session() {
     }
   }
 
-  useEffect(() => {
-    const supabase = createClient();
-
-    async function loadSessionData() {
-      try {
-        setIsLoading(true);
-        
-        // 1. Verificar si la sesión existe y está activa
-        const { data: session, error: sessionError } = await supabase
-          .from('sessions')
-          .select('*')
-          .eq('id', sessionId)
-          .eq('status', 'active')
-          .single();
-
-        if (sessionError || !session) {
-          console.error('Error al cargar la sesión:', sessionError);
-          router.push('/menu');
-          return;
-        }
-
-        // 2. Obtener participantes activos con sus datos de usuario
-        const { data: participantsData, error: participantsError } = await supabase
-          .from('session_participants')
-          .select("*")
-          .eq('session_id', sessionId)
-          .eq('status', 'active');
-
-        if (participantsError) {
-          console.error('Error al cargar participantes:', participantsError);
-          return;
-        }
-
-        if (!participantsData || participantsData.length === 0) {
-          console.error('No hay participantes activos');
-          router.push('/menu');
-          return;
-        }
-
-        // 3. Obtener ideas activas
-        const { data: ideasData, error: ideasError } = await supabase
-          .from('ideas')
-          .select('*')
-          .eq('session_id', sessionId)
-          .eq('status', 'draft');
-
-        if (ideasError) {
-          console.error('Error al cargar ideas:', ideasError);
-          return;
-        } else console.info(ideasData); 
-        
-        // Transformar los datos al formato correcto
-        const formattedParticipants = await Promise.all(participantsData.map(async p => {
-          return {
-            id: p.id,
-            session_id: p.session_id,
-            user_id: p.user_id,
-            status: p.status as 'active',
-            full_name: p.username,
-            isOwner: p.isOwner,
-            ideaPermission: p.ideaPermission
-          };
-        }));
-
-        setParticipants(formattedParticipants);
-        setIdeas(ideasData || []);
-
-      } catch (error) {
-        console.error('Error loading session data:', error);
-        router.push('/menu');
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    // Cargar datos iniciales
-    if (sessionId) {
-      loadSessionData();
-    }
-
-    // Suscribirse a cambios en participantes e ideas
-    const channel = supabase
-      .channel(`session_${sessionId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'session_participants',
-          filter: `session_id=eq.${sessionId}`
-        },
-        async (payload) => {
-          console.log('Participant change:', payload);
-          loadSessionData();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'ideas',
-          filter: `session_id=eq.${sessionId}`
-        },
-        async (payload) => {
-          console.log('Idea change:', payload);
-          loadSessionData();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [sessionId, router]);
+  const isLoading = isSessionLoading || isIdeasLoading;
 
   return (
     <>
@@ -194,38 +78,7 @@ export default function Session() {
         <dialog id="createIdeaModal" className="modal">
           <div className="modal-box">
             <h3 className="font-bold text-lg mb-4">Nueva Idea</h3>
-            <form onSubmit={async (e) => {
-              e.preventDefault();
-              const form = e.target as HTMLFormElement;
-              const formData = new FormData(form);
-              const title = formData.get('title') as string;
-              const description = formData.get('description') as string;
-
-              if (!title || !description) return;
-
-              const supabase = createClient();
-              
-              try {
-                const { error } = await supabase
-                  .from('ideas')
-                  .insert({
-                    title: title.trim(),
-                    description: description.trim(),
-                    session_id: sessionId,
-                    user_id: user?.id,
-                    status: 'draft'
-                  });
-
-                if (error) throw error;
-
-                // Cerrar modal y limpiar form
-                const modal = document.getElementById('createIdeaModal') as HTMLDialogElement;
-                modal?.close();
-                form.reset();
-              } catch (error) {
-                console.error('Error al crear idea:', error);
-              }
-            }}>
+            <form onSubmit={handleCreateIdea}>
               <div className="form-control w-full">
                 <label className="label">
                   <span className="label-text">Título</span>
@@ -263,8 +116,6 @@ export default function Session() {
             </form>
           </div>
         </dialog>
-
-        
       </div>
 
       <main className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-10 sm:gap-8 place-items-center mx-20 my-10">
@@ -276,7 +127,7 @@ export default function Session() {
         ) : participants.length > 0 ? (
           // Mostrar participantes
           participants.map((participant) => {
-            const userIdeas = ideas.filter(idea => idea.user_id === participant.user_id);
+            const userIdeas = getUserIdeasForParticipant(ideas, participant.user_id);
             return (
               <UserCard
                 key={participant.id}
@@ -284,6 +135,8 @@ export default function Session() {
                 fullName={participant.full_name || undefined}
                 hasIdeas={userIdeas.length > 0}
                 userIdeas={userIdeas}
+                currentUserId={user?.id}
+                onRateIdea={handleRateIdea}
               />
             );
           })

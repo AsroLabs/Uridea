@@ -6,6 +6,8 @@ interface Idea {
     user_id: string;
     created_at: string;
     status: 'active' | 'draft';
+    likes: number;
+    dislikes: number;
 }
 
 interface UserCardProps {
@@ -14,9 +16,23 @@ interface UserCardProps {
     hasIdeas?: boolean;
     isLoading?: boolean;
     userIdeas?: Idea[];
+    currentUserId?: string;
+    onRateIdea?: (ideaId: string, action: 'like' | 'dislike') => void;
 }
 
-export default function UserCard({ fullName, user_id, hasIdeas = false, isLoading = false, userIdeas = [] }: UserCardProps) {
+export default function UserCard({ 
+    fullName, 
+    user_id, 
+    hasIdeas = false, 
+    isLoading = false, 
+    userIdeas = [],
+    currentUserId,
+    onRateIdea 
+}: UserCardProps) {
+    const handleRate = (ideaId: string, action: 'like' | 'dislike') => (e: React.MouseEvent) => {
+        e.stopPropagation();
+        onRateIdea?.(ideaId, action);
+    };
     if (isLoading) {
         return (
             <div className="flex flex-col gap-4">
@@ -65,11 +81,35 @@ export default function UserCard({ fullName, user_id, hasIdeas = false, isLoadin
                     <div className="space-y-4 max-h-[60vh] overflow-y-auto">
                         {userIdeas.length > 0 ? (
                             userIdeas.map((idea) => (
-                                <div key={idea.id} className="card bg-base-100 shadow-sm">
+                                                                <div key={idea.id} className="card bg-base-100 shadow-sm">
                                     <div className="card-body">
                                         <h2 className="card-title">{idea.title}</h2>
                                         <p>{idea.description}</p>
-                                        <div className="card-actions justify-end">
+                                        <div className="card-actions justify-between items-center mt-4">
+                                            <div className="flex gap-4 items-center">
+                                                <button 
+                                                    className={`btn btn-sm gap-2 ${
+                                                        idea.likes > 0 ? 'btn-primary' : 'btn-ghost'
+                                                    }`}
+                                                    onClick={handleRate(idea.id, 'like')}
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                                                    </svg>
+                                                    <span>{idea.likes || 0}</span>
+                                                </button>
+                                                <button 
+                                                    className={`btn btn-sm gap-2 ${
+                                                        idea.dislikes > 0 ? 'btn-error' : 'btn-ghost'
+                                                    }`}
+                                                    onClick={handleRate(idea.id, 'dislike')}
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018c.163 0 .326.02.485.06L17 4m-7 10v2a2 2 0 002 2h.095c.5 0 .905-.405.905-.905 0-.714.211-1.412.608-2.006L17 13V4m-7 10h2m5 0h2a2 2 0 002-2v-6a2 2 0 00-2-2h-2.5" />
+                                                    </svg>
+                                                    <span>{idea.dislikes || 0}</span>
+                                                </button>
+                                            </div>
                                             <span className="text-sm text-base-content/60">
                                                 {new Date(idea.created_at).toLocaleDateString('es-ES')}
                                             </span>
