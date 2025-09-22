@@ -5,7 +5,7 @@ interface Idea {
     session_id: string;
     user_id: string;
     created_at: string;
-    status: 'active' | 'draft';
+    status: 'saved' | 'draft' | 'discarded';
     likes: number;
     dislikes: number;
 }

@@ -1,12 +1,23 @@
+import { useEffect, useState } from "react";
 import Card from "../ui/Card";
+import useSavedSessions from "@/hooks/useSavedSessions";
+import type { SavedSession } from "@/hooks/useSavedSessions";
 
 export default function CardSection() {
+    const [sessions, setSessions] = useState<SavedSession[]>([]);
+    useEffect(() => {
+        const getSessions = async () => {
+            const { savedSessions } = await useSavedSessions();
+            setSessions(savedSessions);
+        }
+
+        getSessions();
+    }, []);
     return (
         <section className="grid grid-cols-2 gap-4 place-items-center max-w-4xl mx-auto mb-8 px-2 text-balance">
-            <Card title="Sesión 1" description="Sesión para decidir qué hacemos con este proyecto" />
-            <Card title="Sesión 2" description="Sesión para decidir qué hacemos con este proyecto" />
-            <Card title="Sesión 3" description="Sesión para decidir qué hacemos con este proyecto" />
-            <Card title="Sesión 4" description="Sesión para decidir qué hacemos con este proyecto" />
+            {sessions.map(session => (
+                <Card key={session.id} title={session.title} />
+            ))}
         </section>
     )
 }
