@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useUser } from '@/hooks/useUser';
 import useRealtimeSession from '@/hooks/useSession';
@@ -14,12 +15,12 @@ export default function Session() {
   const { sessionId } = useParams();
   const { user } = useUser();
 
-  const { participants, isLoading: isSessionLoading } = useRealtimeSession({
+  const { participants, session, isLoading: isSessionLoading, endSession, updateParticipantStatus } = useRealtimeSession({
     sessionId: sessionId as string,
     userId: user?.id as string
   });
 
-  const { ideas, isLoading: isIdeasLoading, handleRateIdea } = useIdeas({
+  const { ideas, isLoading: isIdeasLoading, handleRateIdea, handleManageIdea } = useIdeas({
     sessionId: sessionId as string,
     userId: user?.id
   });
@@ -36,11 +37,25 @@ export default function Session() {
   const handleLogout = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     try {
+      const is_owner = participants.find(p => p.user_id === user?.id)?.is_owner || false;
+      
+      if (is_owner) {
+        // If owner, end session before redirecting
+        await endSession();
+      } else updateParticipantStatus('ended');
+      
       router.push("/menu");
     } catch (err) {
       console.error("Unexpected error during logout:", err);
     }
   }
+
+  // Listen for session status changes
+  useEffect(() => {
+    if (session?.status === 'ended') {
+      router.push("/menu");
+    }
+  }, [session?.status, router]);
 
   const isLoading = isSessionLoading || isIdeasLoading;
 
@@ -135,8 +150,9 @@ export default function Session() {
                 fullName={participant.full_name || undefined}
                 hasIdeas={userIdeas.length > 0}
                 userIdeas={userIdeas}
-                currentUserId={user?.id}
+                is_owner={participants.find(p => p.user_id === user?.id)?.is_owner || false}
                 onRateIdea={handleRateIdea}
+                onManageIdea={handleManageIdea}
               />
             );
           })

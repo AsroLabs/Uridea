@@ -21,8 +21,8 @@ interface Participant {
   session_id: string
   user_id: string
   full_name: string
-  status: 'active' | 'inactive'
-  isOwner: boolean
+  status: 'active' | 'ended'
+  is_owner: boolean
   ideaPermission: boolean
 }
 
@@ -72,7 +72,7 @@ export default function useRealtimeSession({ sessionId, userId }: UseRealtimeSes
         user_id: p.user_id,
         status: p.status as 'active',
         full_name: p.username,
-        isOwner: p.isOwner,
+        is_owner: p.is_owner,
         ideaPermission: p.ideaPermission
       }))
 
@@ -127,7 +127,7 @@ export default function useRealtimeSession({ sessionId, userId }: UseRealtimeSes
   }, [sessionId, fetchInitialData, supabase])
 
   const updateParticipantStatus = useCallback(
-    async (status: 'active' | 'inactive') => {
+    async (status: 'active' | 'ended') => {
       if (!userId) return
       
       try {
@@ -145,13 +145,39 @@ export default function useRealtimeSession({ sessionId, userId }: UseRealtimeSes
     [supabase, sessionId, userId]
   )
 
+  const endSession = useCallback(async () => {
+    try {
+      // 1. Update session status to ended
+      const { error: sessionError } = await supabase
+        .from('sessions')
+        .update({ status: 'ended' })
+        .eq('id', sessionId);
+
+      if (sessionError) throw sessionError;
+
+      // 2. Update all active participants status to ended
+      const { error: participantsError } = await supabase
+        .from('session_participants')
+        .update({ status: 'ended' })
+        .eq('session_id', sessionId)
+
+      if (participantsError) throw participantsError;
+
+      return true;
+    } catch (error) {
+      console.error('Error ending session:', error);
+      return false;
+    }
+  }, [sessionId, supabase]);
+
   return {
     session,
     participants,
     isLoading,
     isConnected,
     updateParticipantStatus,
-    reloadSession: fetchInitialData
+    reloadSession: fetchInitialData,
+    endSession
   }
 }
 

@@ -10,7 +10,7 @@ export interface Idea {
   session_id: string
   user_id: string
   created_at: string
-  status: 'active' | 'draft'
+  status: 'saved' | 'draft' | 'discarded'
   likes: number
   dislikes: number
   userRating?: 'like' | 'dislike' | null
@@ -102,6 +102,40 @@ export function useIdeas({ sessionId, userId }: UseIdeasProps) {
     }
   }, [ideas, userId, supabase, loadIdeas])
 
+  const handleManageIdea = useCallback(async (ideaId: string, action: 'save' | 'discard') => {
+    try {
+      const ideaToUpdate = ideas.find(idea => idea.id === ideaId)
+      if (!ideaToUpdate) return
+
+      // Optimistic update - remove idea from list since we're either saving or discarding
+      setIdeas(currentIdeas => currentIdeas.filter(idea => idea.id !== ideaId))
+
+      if (action === 'save') {
+        const { error } = await supabase
+          .from('ideas')
+          .update({ status: 'saved' })
+          .eq('id', ideaId)
+
+        if (error) throw error
+      }
+      
+      if (action === 'discard') {
+        // For discard, we delete the idea
+        const { error } = await supabase
+          .from('ideas')
+          .delete()
+          .eq('id', ideaId)
+
+
+        if (error) throw error
+      }
+    } catch (error) {
+      console.error('Error managing idea:', error)
+      // On error, reload ideas to restore state
+      loadIdeas()
+    }
+  }, [ideas, supabase, loadIdeas])
+
   useEffect(() => {
     if (!sessionId) return
 
@@ -119,14 +153,26 @@ export function useIdeas({ sessionId, userId }: UseIdeasProps) {
           filter: `session_id=eq.${sessionId}`
         },
         async (payload: any) => {
-          if (payload.eventType === 'UPDATE' && payload.new.likes !== undefined) {
-            setIdeas(currentIdeas => 
-              currentIdeas.map(idea => 
-                idea.id === payload.new.id
-                  ? { ...idea, likes: payload.new.likes, dislikes: payload.new.dislikes }
-                  : idea
+          if (payload.eventType === 'DELETE') {
+            setIdeas(currentIdeas => currentIdeas.filter(idea => idea.id !== payload.old.id))
+          }
+          else if (payload.eventType === 'UPDATE') {
+            if (payload.new.status !== 'draft') {
+              // Remove ideas that are no longer in draft status
+              setIdeas(currentIdeas => currentIdeas.filter(idea => idea.id !== payload.new.id))
+            } 
+            else if (payload.new.likes !== undefined || payload.new.dislikes !== undefined) {
+              // Update likes/dislikes count
+              setIdeas(currentIdeas => 
+                currentIdeas.map(idea => 
+                  idea.id === payload.new.id
+                    ? { ...idea, likes: payload.new.likes, dislikes: payload.new.dislikes }
+                    : idea
+                )
               )
-            )
+            } else {
+              loadIdeas()
+            }
           } else {
             loadIdeas()
           }
@@ -142,6 +188,7 @@ export function useIdeas({ sessionId, userId }: UseIdeasProps) {
   return {
     ideas,
     isLoading,
-    handleRateIdea
+    handleRateIdea,
+    handleManageIdea
   }
 }
