@@ -1,10 +1,24 @@
-export default function Card({ title = "Sesión"}: { title: string}) {
+interface CardProps {
+    title: string
+    subtitle?: string
+    onClick?: () => void
+}
+
+export default function Card({ title = "Sesión", subtitle, onClick }: CardProps) {
     return (
-        <div className="card-xs sm:card-sm md:card-md bg-base-100 shadow-sm rounded-2xl">
+        <div className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow duration-200 w-full">
             <div className="card-body">
                 <h2 className="card-title">{title}</h2>
-                <div className="justify-end card-actions ">
-                    <button className="btn btn-primary rounded btn-xs sm:btn-sm md:btn-md">View session</button>
+                {subtitle && (
+                    <p className="text-base-content/70">{subtitle}</p>
+                )}
+                <div className="justify-end card-actions mt-4">
+                    <button 
+                        className="btn btn-sm md:btn-md btn-primary" 
+                        onClick={onClick}
+                    >
+                        Ver ideas guardadas
+                    </button>
                 </div>
             </div>
         </div>
