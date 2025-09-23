@@ -26,7 +26,7 @@ export default function SessionPage() {
 
   // Find current user in participants to determine if they're the owner
   const currentParticipant = participants.find(p => p.user_id === user?.id)
-  const isOwner = currentParticipant?.isOwner || false
+  const is_owner = currentParticipant?.is_owner || false
 
   if (isSessionLoading || isIdeasLoading) {
     return <div>Loading...</div>
@@ -48,7 +48,7 @@ export default function SessionPage() {
             userIdeas={ideas.filter((idea: Idea) => idea.user_id === participant.user_id)}
             hasIdeas={ideas.some((idea: Idea) => idea.user_id === participant.user_id)}
             currentUserId={user?.id}
-            isOwner={isOwner}
+            is_owner={is_owner}
             onManageIdea={handleManageIdea}
           />
         ))}

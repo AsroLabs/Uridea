@@ -53,7 +53,7 @@ export default function JoinSection() {
                     user_id: user.id,
                     status: 'active',
                     username: fullName || 'User',
-                    isOwner: user.id === session.owner_id,
+                    is_owner: user.id === session.owner_id,
                     ideaPermission: user.id === session.owner_id
                 })
                 .select()
