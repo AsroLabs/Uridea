@@ -15,7 +15,7 @@ export default function Session() {
   const { sessionId } = useParams();
   const { user } = useUser();
 
-  const { participants, session, isLoading: isSessionLoading, endSession, updateParticipantStatus } = useRealtimeSession({
+  const { participants, session, isLoading: isSessionLoading, endSession, removeParticipant } =  useRealtimeSession({
     sessionId: sessionId as string,
     userId: user?.id as string
   });
@@ -37,12 +37,16 @@ export default function Session() {
   const handleLogout = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     try {
-      const is_owner = participants.find(p => p.user_id === user?.id)?.is_owner || false;
+      const is_owner = user?.id === session?.owner_id || false;
       
       if (is_owner) {
-        // If owner, end session before redirecting
+        // If owner, end session which will update is_ended and remove all participants
+        console.log("Ending session and removing all participants")
         await endSession();
-      } else updateParticipantStatus('ended');
+      } else {
+        // If not owner, just remove the participant
+        await removeParticipant();
+      }
       
       router.push("/menu");
     } catch (err) {
@@ -50,12 +54,15 @@ export default function Session() {
     }
   }
 
-  // Listen for session status changes
+  // Listen for session ended state
   useEffect(() => {
-    if (session?.status === 'ended') {
+    const currentParticipant = participants.find(p => p.user_id === user?.id);
+    
+    // Redirect if session is ended or if current participant is not found
+    if (session?.is_ended || !currentParticipant) {
       router.push("/menu");
     }
-  }, [session?.status, router]);
+  }, [session?.is_ended, participants, user?.id, router]);
 
   const isLoading = isSessionLoading || isIdeasLoading;
 
