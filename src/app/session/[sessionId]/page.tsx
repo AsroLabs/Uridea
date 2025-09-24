@@ -59,7 +59,7 @@ export default function Session() {
     const currentParticipant = participants.find(p => p.user_id === user?.id);
     
     // Redirect if session is ended or if current participant is not found
-    if (session?.is_ended || !currentParticipant) {
+    if (session?.is_ended) {
       router.push("/menu");
     }
   }, [session?.is_ended, participants, user?.id, router]);

@@ -20,7 +20,7 @@ export default function HeroSection() {
 
         const { data: session, error } = await supabase
             .from('sessions')
-            .insert([{ code, title, owner_id: user.id }])
+            .insert([{ code, title, owner_id: user.id, is_ended: false }])
             .select()
             .single()
 
