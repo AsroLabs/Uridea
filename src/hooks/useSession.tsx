@@ -11,7 +11,7 @@ interface UseRealtimeSessionProps {
 interface Session {
   id: string
   title: string
-  status: 'active' | 'ended'
+  is_ended: boolean
   owner_id: string
   created_at: string
 }
@@ -21,7 +21,6 @@ interface Participant {
   session_id: string
   user_id: string
   full_name: string
-  status: 'active' | 'ended'
   is_owner: boolean
   ideaPermission: boolean
 }
@@ -41,7 +40,6 @@ export default function useRealtimeSession({ sessionId, userId }: UseRealtimeSes
         .from('sessions')
         .select('*')
         .eq('id', sessionId)
-        .eq('status', 'active')
         .single()
 
       if (sessionError || !sessionData) {
@@ -54,7 +52,6 @@ export default function useRealtimeSession({ sessionId, userId }: UseRealtimeSes
         .from('session_participants')
         .select('*')
         .eq('session_id', sessionId)
-        .eq('status', 'active')
 
       if (participantsError) {
         console.error('Error al cargar participantes:', participantsError)
@@ -70,7 +67,7 @@ export default function useRealtimeSession({ sessionId, userId }: UseRealtimeSes
         id: p.id,
         session_id: p.session_id,
         user_id: p.user_id,
-        status: p.status as 'active',
+
         full_name: p.username,
         is_owner: p.is_owner,
         ideaPermission: p.ideaPermission
@@ -126,20 +123,20 @@ export default function useRealtimeSession({ sessionId, userId }: UseRealtimeSes
     }
   }, [sessionId, fetchInitialData, supabase])
 
-  const updateParticipantStatus = useCallback(
-    async (status: 'active' | 'ended') => {
+  const removeParticipant = useCallback(
+    async () => {
       if (!userId) return
       
       try {
         const { error } = await supabase
           .from('session_participants')
-          .update({ status })
+          .delete()
           .eq('session_id', sessionId)
           .eq('user_id', userId)
 
         if (error) throw error
       } catch (error) {
-        console.error('Error updating participant status:', error)
+        console.error('Error removing participant:', error)
       }
     },
     [supabase, sessionId, userId]
@@ -147,26 +144,29 @@ export default function useRealtimeSession({ sessionId, userId }: UseRealtimeSes
 
   const endSession = useCallback(async () => {
     try {
-      // 1. Update session status to ended
+      // 1. Set is_ended to true
       const { error: sessionError } = await supabase
         .from('sessions')
-        .update({ status: 'ended' })
+        .update({ is_ended: true })
         .eq('id', sessionId);
 
       if (sessionError) throw sessionError;
 
-      // 2. Update all active participants status to ended
+      // 2. Delete all participants
       const { error: participantsError } = await supabase
         .from('session_participants')
-        .update({ status: 'ended' })
-        .eq('session_id', sessionId)
+        .delete()
+        .eq('session_id', sessionId);
 
       if (participantsError) throw participantsError;
 
-      return true;
+      // Force update local state
+      setSession(prev => prev ? { ...prev, is_ended: true } : null);
+      setParticipants([]);
+
     } catch (error) {
       console.error('Error ending session:', error);
-      return false;
+      throw error;
     }
   }, [sessionId, supabase]);
 
@@ -175,7 +175,7 @@ export default function useRealtimeSession({ sessionId, userId }: UseRealtimeSes
     participants,
     isLoading,
     isConnected,
-    updateParticipantStatus,
+    removeParticipant,
     reloadSession: fetchInitialData,
     endSession
   }

@@ -21,7 +21,7 @@ export default function JoinSection() {
                 .from('sessions')
                 .select('*')
                 .eq('code', code.toUpperCase())
-                .eq('status', 'active')
+                .eq('is_ended', false)
                 .single();
 
             if (sessionError || !session) {
@@ -39,8 +39,8 @@ export default function JoinSection() {
                 .eq('user_id', user.id)
                 .single();
 
-            if (existingParticipant?.status === 'active') {
-                // Ya estamos en la sesión, simplemente redirigimos
+            if (existingParticipant) {
+                console.log('Already a participant, redirecting to session');
                 router.push(`/session/${session.id}`);
                 return;
             }
@@ -48,10 +48,10 @@ export default function JoinSection() {
             // 3. Insertar participante
             const { data: participant, error: participantError } = await supabase
                 .from('session_participants')
-                .insert({
+                .upsert({
                     session_id: session.id,
                     user_id: user.id,
-                    status: 'active',
+
                     username: fullName || 'User',
                     is_owner: user.id === session.owner_id,
                     ideaPermission: user.id === session.owner_id

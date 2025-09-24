@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
+import { useUser } from './useUser'
 
 export interface SavedSession {
     id: string
     title: string
-    status: string
+    is_ended: boolean
     created_at: string
     owner_id: string
 }
@@ -14,6 +15,7 @@ export interface SavedSession {
 export function useSavedSessions() {
     const [sessions, setSessions] = useState<SavedSession[]>([])
     const [isLoading, setIsLoading] = useState(true)
+    const { user } = useUser()
     const supabase = createClient()
 
     const loadSavedSessions = useCallback(async () => {
@@ -22,7 +24,7 @@ export function useSavedSessions() {
             const { data, error } = await supabase
                 .from('sessions')
                 .select('*')
-                .eq('status', 'ended')
+                .eq('is_ended', true)
 
 
             console.log('Query result:', { data, error });
@@ -39,7 +41,7 @@ export function useSavedSessions() {
                     return {
                         id: session.id,
                         title: session.title,
-                        status: session.status,
+                        is_ended: session.is_ended,
                         created_at: session.created_at,
                         owner_id: session.owner_id
                     };
