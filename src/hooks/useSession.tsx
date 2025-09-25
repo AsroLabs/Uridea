@@ -110,7 +110,7 @@ export default function useRealtimeSession({ sessionId, userId }: UseRealtimeSes
             )
           }
           if (payload.eventType === 'DELETE') {
-            setParticipants((prev) => prev.filter((p) => p.id !== payload.old.id))
+            setParticipants(participants.filter((p) => p.id !== payload.old.id))
           }
         }
       )
