@@ -15,7 +15,7 @@ export default function Session() {
   const { sessionId } = useParams();
   const { user } = useUser();
 
-  const { participants, session, isLoading: isSessionLoading, endSession, removeParticipant } =  useRealtimeSession({
+  const { participants, session, isLoading: isSessionLoading, endSession, removeParticipant, updateIdeaPermission } =  useRealtimeSession({
     sessionId: sessionId as string,
     userId: user?.id as string
   });
@@ -157,9 +157,11 @@ export default function Session() {
                 fullName={participant.full_name || undefined}
                 hasIdeas={userIdeas.length > 0}
                 userIdeas={userIdeas}
-                is_owner={participants.find(p => p.user_id === user?.id)?.is_owner || false}
+                is_owner={user?.id === session?.owner_id}
+                ideaPermission={participant.ideaPermission}
                 onRateIdea={handleRateIdea}
                 onManageIdea={handleManageIdea}
+                onToggleIdeaPermission={() => updateIdeaPermission(participant.id, !participant.ideaPermission)}
               />
             );
           })

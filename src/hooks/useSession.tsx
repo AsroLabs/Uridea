@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/utils/supabase/client'
+import {useRouter} from 'next/navigation'
 
 interface UseRealtimeSessionProps {
   sessionId: string
@@ -27,6 +28,7 @@ interface Participant {
 
 export default function useRealtimeSession({ sessionId, userId }: UseRealtimeSessionProps) {
   const supabase = createClient()
+  const router = useRouter();
   const [session, setSession] = useState<Session | null>(null)
   const [participants, setParticipants] = useState<Participant[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -44,6 +46,7 @@ export default function useRealtimeSession({ sessionId, userId }: UseRealtimeSes
 
       if (sessionError || !sessionData) {
         console.error('Error al cargar la sesión:', sessionError)
+        router.push('/menu');
         return false
       }
 
@@ -110,7 +113,7 @@ export default function useRealtimeSession({ sessionId, userId }: UseRealtimeSes
             )
           }
           if (payload.eventType === 'DELETE') {
-            setParticipants((prev) => prev.filter((p) => p.id !== payload.old.id))
+            setParticipants(participants.filter((p) => p.id !== payload.old.id))
           }
         }
       )
@@ -126,7 +129,7 @@ export default function useRealtimeSession({ sessionId, userId }: UseRealtimeSes
   const removeParticipant = useCallback(
     async () => {
       if (!userId) return
-      
+
       try {
         const { error } = await supabase
           .from('session_participants')
@@ -141,6 +144,23 @@ export default function useRealtimeSession({ sessionId, userId }: UseRealtimeSes
     },
     [supabase, sessionId, userId]
   )
+
+  const updateIdeaPermission = useCallback(
+    async (participantId: string, permission: boolean) => {
+      try {
+        const { error } = await supabase
+          .from('session_participants')
+          .update({ ideaPermission: permission })
+          .eq('id', participantId);
+
+        if (error) throw error;
+      } catch (error) {
+        console.error('Error updating idea permission:', error);
+        throw error;
+      }
+    },
+    [supabase]
+  );
 
   const endSession = useCallback(async () => {
     try {
@@ -177,7 +197,8 @@ export default function useRealtimeSession({ sessionId, userId }: UseRealtimeSes
     isConnected,
     removeParticipant,
     reloadSession: fetchInitialData,
-    endSession
+    endSession,
+    updateIdeaPermission
   }
 }
 

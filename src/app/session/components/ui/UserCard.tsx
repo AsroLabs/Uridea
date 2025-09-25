@@ -18,19 +18,23 @@ interface UserCardProps {
     userIdeas?: Idea[];
     currentUserId?: string;
     is_owner?: boolean;
+    ideaPermission?: boolean;
     onRateIdea?: (ideaId: string, action: 'like' | 'dislike') => void;
     onManageIdea?: (ideaId: string, action: 'save' | 'discard') => void;
+    onToggleIdeaPermission?: () => void;
 }
 
-export default function UserCard({ 
-    fullName, 
-    user_id, 
-    hasIdeas = false, 
-    isLoading = false, 
+export default function UserCard({
+    fullName,
+    user_id,
+    hasIdeas = false,
+    isLoading = false,
     userIdeas = [],
     is_owner = false,
+    ideaPermission = false,
     onRateIdea,
-    onManageIdea 
+    onManageIdea,
+    onToggleIdeaPermission
 }: UserCardProps) {
     const handleRate = (ideaId: string, action: 'like' | 'dislike') => (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -59,22 +63,39 @@ export default function UserCard({
 
     return (
         <>
-            <div 
-                className="flex flex-col gap-4 p-4 bg-base-200 rounded-xl shadow-lg w-full max-w-xs cursor-pointer hover:shadow-xl transition-shadow duration-200"
-                onClick={handleShowIdeas}
-            >
+            <div className="flex flex-col gap-4 p-4 bg-base-200 rounded-xl shadow-lg w-full max-w-xs hover:shadow-xl transition-shadow duration-200">
                 <div className="flex items-center gap-4">
-                    <div className={`avatar placeholder ${hasIdeas ? 'avatar-online ring ring-primary ring-offset-base-100 ring-offset-2' : ''}`}>
+                    <div
+                        className={`avatar placeholder ${hasIdeas ? 'avatar-online ring ring-primary ring-offset-base-100 ring-offset-2' : ''} cursor-pointer`}
+                        onClick={handleShowIdeas}
+                    >
                         <div className="bg-neutral text-neutral-content rounded-full w-16">
                             <span className="text-xl">{fullName?.[0]?.toUpperCase() || 'U'}</span>
                         </div>
                     </div>
-                    <div className="flex flex-col">
+                    <div className="flex flex-col flex-1 cursor-pointer" onClick={handleShowIdeas}>
                         <span className="font-semibold">{fullName || 'Usuario'}</span>
                         {hasIdeas && (
                             <span className="text-sm text-primary">Ha compartido ideas</span>
                         )}
                     </div>
+                    {is_owner && (
+                        <div className="dropdown dropdown-end">
+                            <div tabIndex={0} role="button" className="btn btn-sm btn-ghost btn-square">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="w-4 h-4 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"></path></svg>
+                            </div>
+                            <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+                                <li>
+                                    <button
+                                        className={ideaPermission ? 'text-error' : 'text-success'}
+                                        onClick={() => onToggleIdeaPermission?.()}
+                                    >
+                                        {ideaPermission ? 'Revoke Idea Permission' : 'Give Idea Permission'}
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -84,16 +105,15 @@ export default function UserCard({
                     <div className="space-y-4 max-h-[60vh] overflow-y-auto">
                         {userIdeas.length > 0 ? (
                             userIdeas.map((idea) => (
-                                                                <div key={idea.id} className="card bg-base-100 shadow-sm">
+                                <div key={idea.id} className="card bg-base-100 shadow-sm">
                                     <div className="card-body">
                                         <h2 className="card-title">{idea.title}</h2>
                                         <p>{idea.description}</p>
                                         <div className="card-actions justify-between items-center mt-4">
                                             <div className="flex gap-4 items-center">
-                                                <button 
-                                                    className={`btn btn-sm gap-2 ${
-                                                        idea.likes > 0 ? 'btn-primary' : 'btn-ghost'
-                                                    }`}
+                                                <button
+                                                    className={`btn btn-sm gap-2 ${idea.likes > 0 ? 'btn-primary' : 'btn-ghost'
+                                                        }`}
                                                     onClick={handleRate(idea.id, 'like')}
                                                 >
                                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -101,10 +121,9 @@ export default function UserCard({
                                                     </svg>
                                                     <span>{idea.likes || 0}</span>
                                                 </button>
-                                                <button 
-                                                    className={`btn btn-sm gap-2 ${
-                                                        idea.dislikes > 0 ? 'btn-error' : 'btn-ghost'
-                                                    }`}
+                                                <button
+                                                    className={`btn btn-sm gap-2 ${idea.dislikes > 0 ? 'btn-error' : 'btn-ghost'
+                                                        }`}
                                                     onClick={handleRate(idea.id, 'dislike')}
                                                 >
                                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -121,7 +140,7 @@ export default function UserCard({
                                                         </div>
                                                         <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
                                                             <li>
-                                                                <button 
+                                                                <button
                                                                     className="text-success"
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
@@ -132,7 +151,7 @@ export default function UserCard({
                                                                 </button>
                                                             </li>
                                                             <li>
-                                                                <button 
+                                                                <button
                                                                     className="text-error"
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
